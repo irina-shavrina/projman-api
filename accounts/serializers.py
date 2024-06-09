@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             password=validated_data['password']
         )
+
         return user
 
 
@@ -47,13 +48,6 @@ class UserProfileSerializer(serializers.Serializer):
 
         return profile
 
-    def to_representation(self, instance):
-        return {
-            "username": instance.user.username,
-            "first_name": instance.first_name,
-            "last_name": instance.last_name,
-            "avatar": self.context['request'].build_absolute_uri(instance.avatar.url) if instance.avatar else None,
-        }
 
 class TokenSerializer(serializers.Serializer):
     token = serializers.CharField()
@@ -64,4 +58,3 @@ class TokenSerializer(serializers.Serializer):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }
-

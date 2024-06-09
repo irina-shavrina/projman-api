@@ -16,22 +16,30 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             profile = serializer.save()
-            return Response({
-                "user": {
+
+            username = request.data.get('username')
+            password = request.data.get('password')
+
+            user = authenticate(username=username, password=password)
+
+            token_serializer = TokenSerializer()
+            tokens = token_serializer.get_tokens_for_user(user)
+            print(tokens)
+            return Response(tokens|{
+
                     "username": profile.user.username,
                     "first_name": profile.first_name,
                     "last_name": profile.last_name,
-                    "avatar": profile.avatar.url if profile.avatar else None,
-                },
-                "message": "User and profile created successfully."
+                    "avatar": request.build_absolute_uri(profile.avatar.url) if profile.avatar else None,
+
             }, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = TokenSerializer
+
 
     def post(self, request):
         username = request.data.get('username')
@@ -41,7 +49,15 @@ class LoginView(generics.GenericAPIView):
         if user is not None:
             token_serializer = self.serializer_class()
             tokens = token_serializer.get_tokens_for_user(user)
-            return Response(tokens)
+
+            profile = Profile.objects.get(user=user)
+            profile_data = {
+                'username': user.username,
+                'first_name': profile.first_name,
+                'last_name': profile.last_name,
+                'avatar': request.build_absolute_uri(profile.avatar.url) if profile.avatar else None if profile.avatar else None,
+            }
+            return Response({**tokens, **profile_data})
         else:
             return Response({"error": "Invalid credentials"}, status=400)
 
