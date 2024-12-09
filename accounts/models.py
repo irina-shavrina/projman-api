@@ -23,29 +23,24 @@ class Contact(models.Model):
         unique_together = ('from_profile', 'to_profile')
 
 
+class ProjectMember(models.Model):
+    member = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ['member', 'project']
+
+
 class Profile(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        related_name='profile',
-        on_delete=models.CASCADE,
-        verbose_name='User',
-    )
-    avatar = models.ImageField(
-        upload_to=avatar_upload_path,
-        blank=True,
-        null=True,
-        verbose_name='Avatar',
-    )
-    first_name = models.CharField(
-        max_length=255,
-        verbose_name='First Name',
-    )
-    last_name = models.CharField(
-        max_length=255,
-        verbose_name='Last Name',
-    )
-    projects = models.ManyToManyField(
-        'Project',
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='profile',
+        on_delete=models.CASCADE,verbose_name='User',)
+    avatar = models.ImageField(upload_to=avatar_upload_path,blank=True,
+        null=True,verbose_name='Avatar',)
+    first_name = models.CharField(max_length=255,
+        verbose_name='First Name',)
+    last_name = models.CharField(max_length=255,
+        verbose_name='Last Name',)
+    projects = models.ManyToManyField('Project',
         related_name='profiles',
         blank=True,
         verbose_name='Projects',
@@ -74,9 +69,11 @@ class Project(models.Model):
     )
     members = models.ManyToManyField(
         Profile,
+        through='ProjectMember',
         related_name='joined_projects',
         blank=True,
         verbose_name='Members',
+
     )
     name = models.CharField(
         max_length=255,
@@ -89,9 +86,11 @@ class Project(models.Model):
     )
     soft_deadline = models.DateTimeField(
         verbose_name='Soft Deadline',
+        blank=True,
     )
     deadline = models.DateTimeField(
         verbose_name='Final Deadline',
+        blank=True,
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -162,11 +161,11 @@ class Status(models.Model):
 
 
 class Task(models.Model):
-    project = models.ForeignKey(
-        Project,
-        related_name='tasks',
+    status = models.ForeignKey(
+        Status,
+        related_name='statuses',
         on_delete=models.CASCADE,
-        verbose_name='Project',
+        verbose_name='Status',
     )
     creator = models.ForeignKey(
         Profile,
